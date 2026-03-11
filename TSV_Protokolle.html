@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>TSV Waldtrudering – Protokolle</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gelb: #F5C400;
+    --gelb-hell: #FFE066;
+    --gelb-dunkel: #C9A000;
+    --schwarz: #111111;
+    --dunkel: #1C1C1C;
+    --dunkel2: #242424;
+    --dunkel3: #2E2E2E;
+    --grau: #555555;
+    --grau-hell: #888888;
+    --weiss: #F8F8F8;
+    --rot: #E53935;
+    --gruen: #43A047;
+    --radius: 10px;
+    --schatten: 0 4px 24px rgba(0,0,0,0.5);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    background: var(--schwarz);
+    color: var(--weiss);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 15px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── LOGIN ── */
+  #login-screen {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 32px 20px;
+    background: radial-gradient(ellipse at 50% 0%, #2a2200 0%, var(--schwarz) 70%);
+  }
+  .login-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 52px; letter-spacing: 4px;
+    color: var(--gelb);
+    text-shadow: 0 0 40px rgba(245,196,0,0.4);
+    line-height: 1;
+  }
+  .login-sub { font-size: 12px; letter-spacing: 3px; color: var(--grau-hell); text-transform: uppercase; margin-top: 6px; margin-bottom: 48px; }
+  .login-box {
+    background: var(--dunkel);
+    border: 1px solid var(--dunkel3);
+    border-radius: 16px;
+    padding: 32px 28px;
+    width: 100%; max-width: 360px;
+    box-shadow: var(--schatten);
+  }
+  .login-box label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--grau-hell); display: block; margin-bottom: 8px; }
+  .login-box input[type="password"] {
+    width: 100%; padding: 14px 16px;
+    background: var(--dunkel2); border: 1px solid var(--dunkel3);
+    border-radius: var(--radius); color: var(--weiss); font-size: 16px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    outline: none; transition: border-color 0.2s;
+  }
+  .login-box input[type="password"]:focus { border-color: var(--gelb); }
+  .btn-primary {
+    width: 100%; padding: 14px;
+    background: var(--gelb); color: var(--schwarz);
+    border: none; border-radius: var(--radius);
+    font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px;
+    cursor: pointer; margin-top: 20px;
+    transition: background 0.2s, transform 0.1s;
+  }
+  .btn-primary:active { transform: scale(0.98); background: var(--gelb-dunkel); }
+  .login-error { color: var(--rot); font-size: 13px; margin-top: 12px; text-align: center; display: none; }
+
+  /* ── MAIN APP ── */
+  #app { display: none; flex-direction: column; min-height: 100vh; }
+
+  /* HEADER */
+  .app-header {
+    background: var(--dunkel);
+    border-bottom: 2px solid var(--gelb);
+    padding: 14px 18px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .app-header-logo { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 2px; color: var(--gelb); line-height: 1; }
+  .app-header-sub { font-size: 10px; letter-spacing: 2px; color: var(--grau-hell); text-transform: uppercase; }
+  .btn-logout {
+    background: var(--dunkel3); border: 1px solid var(--dunkel3);
+    color: var(--grau-hell); padding: 8px 14px; border-radius: 8px;
+    font-size: 12px; cursor: pointer; font-family: 'IBM Plex Sans', sans-serif;
+    transition: all 0.2s;
+  }
+  .btn-logout:hover { color: var(--weiss); border-color: var(--grau); }
+
+  /* NAV TABS */
+  .nav-tabs {
+    display: flex; background: var(--dunkel2);
+    border-bottom: 1px solid var(--dunkel3);
+  }
+  .nav-tab {
+    flex: 1; padding: 13px 8px; text-align: center;
+    font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--grau-hell); cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s; font-family: 'IBM Plex Sans', sans-serif; font-weight: 500;
+  }
+  .nav-tab.active { color: var(--gelb); border-bottom-color: var(--gelb); }
+
+  /* CONTENT */
+  .tab-content { display: none; padding: 20px 16px; flex: 1; }
+  .tab-content.active { display: block; }
+
+  /* SECTION TITLE */
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px;
+    color: var(--gelb); margin-bottom: 18px;
+  }
+
+  /* SEARCH & FILTER */
+  .filter-bar { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+  .search-input {
+    width: 100%; padding: 12px 16px 12px 42px;
+    background: var(--dunkel2); border: 1px solid var(--dunkel3);
+    border-radius: var(--radius); color: var(--weiss); font-size: 15px;
+    font-family: 'IBM Plex Sans', sans-serif; outline: none;
+    transition: border-color 0.2s; position: relative;
+  }
+  .search-input:focus { border-color: var(--gelb); }
+  .search-wrap { position: relative; }
+  .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--grau-hell); font-size: 16px; pointer-events: none; }
+  .filter-row { display: flex; gap: 8px; }
+  .filter-select {
+    flex: 1; padding: 10px 12px;
+    background: var(--dunkel2); border: 1px solid var(--dunkel3);
+    border-radius: var(--radius); color: var(--weiss); font-size: 13px;
+    font-family: 'IBM Plex Sans', sans-serif; outline: none;
+    transition: border-color 0.2s; appearance: none;
+  }
+  .filter-select:focus { border-color: var(--gelb); }
+  .filter-date {
+    flex: 1; padding: 10px 12px;
+    background: var(--dunkel2); border: 1px solid var(--dunkel3);
+    border-radius: var(--radius); color: var(--weiss); font-size: 13px;
+    font-family: 'IBM Plex Sans', sans-serif; outline: none;
+    transition: border-color 0.2s;
+  }
+  .filter-date:focus { border-color: var(--gelb); }
+  .btn-reset {
+    padding: 10px 14px;
+    background: var(--dunkel3); border: 1px solid var(--dunkel3);
+    border-radius: var(--radius); color: var(--grau-hell); font-size: 12px;
+    cursor: pointer; font-family: 'IBM Plex Sans', sans-serif; white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .btn-reset:active { background: var(--dunkel2); }
+
+  /* PROTOKOLL KARTE */
+  .protokoll-list { display: flex; flex-direction: column; gap: 10px; }
+  .protokoll-card {
+    background: var(--dunkel);
+    border: 1px solid var(--dunkel3);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .protokoll-card::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: var(--gelb); border-radius: 3px 0 0 3px;
+  }
+  .protokoll-card.typ-ausschuss::before { background: #F5C400; }
+  .protokoll-card.typ-sponsor::before { background: #4DB6AC; }
+  .protokoll-card.typ-vorstand::before { background: #EF5350; }
+  .protokoll-card:active { transform: scale(0.99); border-color: var(--gelb); }
+  .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .card-title { font-weight: 600; font-size: 14px; line-height: 1.3; flex: 1; }
+  .card-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .btn-icon {
+    background: var(--dunkel2); border: 1px solid var(--dunkel3);
+    color: var(--grau-hell); width: 32px; height: 32px;
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 14px; transition: all 0.2s; flex-shrink: 0;
+  }
+  .btn-icon:hover { color: var(--weiss); border-color: var(--grau); }
+  .btn-icon.delete:hover { color: var(--rot); border-color: var(--rot); }
+  .card-meta { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; align-items: center; }
+  .badge {
+    font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 20px; font-weight: 500;
+  }
+  .badge-ausschuss { background: rgba(245,196,0,0.15); color: #F5C400; }
+  .badge-sponsor { background: rgba(77,182,172,0.15); color: #4DB6AC; }
+  .badge-vorstand { background: rgba(239,83,80,0.15); color: #EF5350; }
+  .card-date { font-size: 12px; color: var(--grau-hell); }
+  .card-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .tag {
+    font-size: 11px; color: var(--grau-hell);
+    background: var(--dunkel2); padding: 2px 8px; border-radius: 20px;
+  }
+  .card-notiz {
+    margin-top: 8px; font-size: 12px; color: #A0A0A0;
+    background: var(--dunkel2); padding: 6px 10px; border-radius: 6px;
+    border-left: 2px solid var(--gelb-dunkel);
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .empty-state {
+    text-align: center; padding: 60px 20px; color: var(--grau-hell);
+  }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
+  .empty-text { font-size: 14px; }
+
+  /* UPLOAD FORMULAR */
+  .form-group { margin-bottom: 18px; }
+  .form-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--grau-hell); display: block; margin-bottom: 8px; }
+  .form-input, .form-select, .form-textarea {
+    width: 100%; padding: 13px 16px;
+    background: var(--dunkel2); border: 1px solid var(--dunkel3);
+    border-radius: var(--radius); color: var(--weiss); font-size: 15px;
+    font-family: 'IBM Plex Sans', sans-serif; outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--gelb); }
+  .form-select { appearance: none; }
+  .form-textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+  .upload-zone {
+    border: 2px dashed var(--dunkel3); border-radius: var(--radius);
+    padding: 32px 20px; text-align: center; cursor: pointer;
+    transition: all 0.2s; background: var(--dunkel2);
+  }
+  .upload-zone:hover, .upload-zone.dragover { border-color: var(--gelb); background: rgba(245,196,0,0.05); }
+  .upload-zone-icon { font-size: 36px; margin-bottom: 10px; }
+  .upload-zone-text { color: var(--grau-hell); font-size: 14px; }
+  .upload-zone-hint { color: var(--grau); font-size: 12px; margin-top: 4px; }
+  .upload-zone.has-file { border-color: var(--gruen); background: rgba(67,160,71,0.05); }
+  .upload-zone.has-file .upload-zone-text { color: var(--gruen); }
+  #pdf-input { display: none; }
+  .btn-upload {
+    width: 100%; padding: 15px;
+    background: var(--gelb); color: var(--schwarz);
+    border: none; border-radius: var(--radius);
+    font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px;
+    cursor: pointer; margin-top: 8px;
+    transition: background 0.2s, transform 0.1s;
+  }
+  .btn-upload:active { transform: scale(0.98); background: var(--gelb-dunkel); }
+  .btn-upload:disabled { background: var(--dunkel3); color: var(--grau); cursor: not-allowed; }
+  .form-hint { font-size: 12px; color: var(--grau-hell); margin-top: 6px; }
+
+  /* PDF VIEWER */
+  #pdf-viewer-screen {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: var(--schwarz); flex-direction: column;
+  }
+  .viewer-header {
+    background: var(--dunkel); border-bottom: 2px solid var(--gelb);
+    padding: 12px 16px; display: flex; align-items: center; gap: 12px;
+    flex-shrink: 0;
+  }
+  .btn-back {
+    background: var(--dunkel3); border: none; color: var(--weiss);
+    padding: 8px 14px; border-radius: 8px; font-size: 13px;
+    cursor: pointer; font-family: 'IBM Plex Sans', sans-serif;
+    display: flex; align-items: center; gap: 6px;
+    transition: background 0.2s;
+  }
+  .btn-back:active { background: var(--dunkel2); }
+  .viewer-title { font-size: 14px; font-weight: 600; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .viewer-body { flex: 1; overflow: hidden; }
+  .viewer-body iframe, .viewer-body embed {
+    width: 100%; height: 100%; border: none;
+  }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; z-index: 300;
+    background: rgba(0,0,0,0.8); align-items: flex-end; justify-content: center;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal-box {
+    background: var(--dunkel); border: 1px solid var(--dunkel3);
+    border-radius: 16px 16px 0 0; padding: 24px 20px 32px;
+    width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto;
+  }
+  .modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px; color: var(--gelb); margin-bottom: 20px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .btn-secondary {
+    flex: 1; padding: 13px;
+    background: var(--dunkel2); border: 1px solid var(--dunkel3);
+    border-radius: var(--radius); color: var(--weiss); font-size: 14px;
+    cursor: pointer; font-family: 'IBM Plex Sans', sans-serif;
+    transition: all 0.2s;
+  }
+  .btn-secondary:active { background: var(--dunkel3); }
+  .btn-danger {
+    flex: 1; padding: 13px;
+    background: rgba(229,57,53,0.15); border: 1px solid var(--rot);
+    border-radius: var(--radius); color: var(--rot); font-size: 14px;
+    cursor: pointer; font-family: 'IBM Plex Sans', sans-serif;
+    transition: all 0.2s;
+  }
+  .btn-danger:active { background: rgba(229,57,53,0.3); }
+  .btn-save {
+    flex: 1; padding: 13px;
+    background: var(--gelb); border: none;
+    border-radius: var(--radius); color: var(--schwarz); font-size: 14px; font-weight: 600;
+    cursor: pointer; font-family: 'IBM Plex Sans', sans-serif;
+    transition: all 0.2s;
+  }
+  .btn-save:active { background: var(--gelb-dunkel); }
+
+  /* TOAST */
+  #toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--dunkel3); color: var(--weiss);
+    padding: 12px 24px; border-radius: 24px; font-size: 14px;
+    z-index: 500; transition: transform 0.3s ease; white-space: nowrap;
+    border: 1px solid var(--grau);
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+  #toast.success { border-color: var(--gruen); color: var(--gruen); }
+  #toast.error { border-color: var(--rot); color: var(--rot); }
+
+  /* ABLAUF WARNING */
+  .warn-list { list-style: none; margin: 12px 0; }
+  .warn-list li { padding: 6px 0; border-bottom: 1px solid var(--dunkel3); font-size: 13px; color: #FFB74D; }
+  .warn-list li:last-child { border-bottom: none; }
+
+  /* STATS */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+  .stat-card {
+    background: var(--dunkel); border: 1px solid var(--dunkel3);
+    border-radius: var(--radius); padding: 16px 14px; text-align: center;
+  }
+  .stat-number { font-family: 'Bebas Neue', sans-serif; font-size: 36px; color: var(--gelb); line-height: 1; }
+  .stat-label { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--grau-hell); margin-top: 4px; }
+
+  .count-badge {
+    background: var(--gelb); color: var(--schwarz);
+    font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 10px;
+    margin-left: 4px;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); }
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══════════════════════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-logo">TSV</div>
+  <div class="login-sub">Waldtrudering · Protokolle</div>
+  <div class="login-box">
+    <label for="pw-input">Passwort</label>
+    <input type="password" id="pw-input" placeholder="••••••••" autocomplete="current-password">
+    <button class="btn-primary" onclick="doLogin()">Anmelden</button>
+    <div class="login-error" id="login-error">❌ Falsches Passwort</div>
+  </div>
+</div>
+
+<!-- ══ APP ════════════════════════════════════════════════════════ -->
+<div id="app">
+  <div class="app-header">
+    <div>
+      <div class="app-header-logo">TSV Waldtrudering</div>
+      <div class="app-header-sub">Protokollverwaltung</div>
+    </div>
+    <button class="btn-logout" onclick="doLogout()">Abmelden</button>
+  </div>
+
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="showTab('liste')" id="tab-liste">📋 Protokolle</div>
+    <div class="nav-tab" onclick="showTab('upload')" id="tab-upload">➕ Hochladen</div>
+    <div class="nav-tab" onclick="showTab('info')" id="tab-info">ℹ️ Info</div>
+  </div>
+
+  <!-- ── LISTE ── -->
+  <div class="tab-content active" id="content-liste">
+    <div class="stats-grid" id="stats-grid"></div>
+    <div class="filter-bar">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input class="search-input" type="search" id="search-input" placeholder="Suche nach Titel oder Stichwort …" oninput="renderListe()">
+      </div>
+      <div class="filter-row">
+        <select class="filter-select" id="filter-typ" onchange="renderListe()">
+          <option value="">Alle Typen</option>
+          <option value="Ausschusssitzung">Ausschuss</option>
+          <option value="Sponsorenrunde">Sponsoren</option>
+          <option value="Vorstandsprotokoll">Vorstand</option>
+        </select>
+        <input class="filter-date" type="date" id="filter-von" onchange="renderListe()" title="Von Datum">
+        <input class="filter-date" type="date" id="filter-bis" onchange="renderListe()" title="Bis Datum">
+        <button class="btn-reset" onclick="resetFilter()">✕</button>
+      </div>
+    </div>
+    <div class="protokoll-list" id="protokoll-list"></div>
+  </div>
+
+  <!-- ── UPLOAD ── -->
+  <div class="tab-content" id="content-upload">
+    <div class="section-title">Protokoll hochladen</div>
+
+    <div class="form-group">
+      <label class="form-label">PDF-Datei *</label>
+      <div class="upload-zone" id="upload-zone" onclick="document.getElementById('pdf-input').click()"
+           ondragover="event.preventDefault();this.classList.add('dragover')"
+           ondragleave="this.classList.remove('dragover')"
+           ondrop="handleDrop(event)">
+        <div class="upload-zone-icon">📄</div>
+        <div class="upload-zone-text" id="upload-zone-text">Tippen zum Auswählen</div>
+        <div class="upload-zone-hint">Nur PDF-Dateien</div>
+      </div>
+      <input type="file" id="pdf-input" accept=".pdf,application/pdf" onchange="handleFileSelect(event)">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Titel *</label>
+      <input class="form-input" type="text" id="f-titel" placeholder="z.B. Vorstandssitzung März 2026">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Datum *</label>
+      <input class="form-input" type="date" id="f-datum">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Protokolltyp *</label>
+      <select class="form-select" id="f-typ">
+        <option value="">Bitte wählen …</option>
+        <option value="Ausschusssitzung">Ausschusssitzung</option>
+        <option value="Sponsorenrunde">Sponsorenrunde</option>
+        <option value="Vorstandsprotokoll">Vorstandsprotokoll</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Stichworte</label>
+      <input class="form-input" type="text" id="f-tags" placeholder="z.B. Budget, Müller, Sponsoring">
+      <div class="form-hint">Mehrere Stichworte mit Komma trennen</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Notiz</label>
+      <textarea class="form-textarea" id="f-notiz" placeholder="Persönliche Anmerkung …"></textarea>
+    </div>
+
+    <button class="btn-upload" id="btn-upload" onclick="saveProtokoll()" disabled>Protokoll speichern</button>
+  </div>
+
+  <!-- ── INFO ── -->
+  <div class="tab-content" id="content-info">
+    <div class="section-title">Informationen</div>
+    <div style="background:var(--dunkel);border:1px solid var(--dunkel3);border-radius:var(--radius);padding:18px;margin-bottom:14px;">
+      <div style="font-weight:600;margin-bottom:8px;color:var(--gelb)">📌 Automatische Löschung</div>
+      <div style="font-size:13px;color:var(--grau-hell);line-height:1.6">
+        Protokolle werden automatisch <strong style="color:var(--weiss)">5 Jahre</strong> nach ihrem Protokolldatum zur Löschung vorgeschlagen.<br><br>
+        Beim Start der App wird geprüft, ob abgelaufene Protokolle vorhanden sind. Du wirst vor jeder Löschung gefragt und musst diese <strong style="color:var(--weiss)">aktiv bestätigen</strong>.
+      </div>
+    </div>
+    <div style="background:var(--dunkel);border:1px solid var(--dunkel3);border-radius:var(--radius);padding:18px;margin-bottom:14px;">
+      <div style="font-weight:600;margin-bottom:8px;color:var(--gelb)">🔒 Passwort ändern</div>
+      <div style="font-size:13px;color:var(--grau-hell);line-height:1.6;margin-bottom:12px">
+        Aktuelles Passwort (Standard: <strong style="color:var(--weiss)">TSV2024</strong>)
+      </div>
+      <input class="form-input" type="password" id="pw-neu" placeholder="Neues Passwort" style="margin-bottom:10px">
+      <input class="form-input" type="password" id="pw-neu2" placeholder="Passwort wiederholen" style="margin-bottom:12px">
+      <button class="btn-save" onclick="changePassword()" style="width:100%">Passwort speichern</button>
+    </div>
+    <div style="background:var(--dunkel);border:1px solid var(--dunkel3);border-radius:var(--radius);padding:18px;">
+      <div style="font-weight:600;margin-bottom:8px;color:var(--gelb)">💾 Speicherplatz</div>
+      <div style="font-size:13px;color:var(--grau-hell)" id="speicher-info">Wird berechnet …</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PDF VIEWER ════════════════════════════════════════════════ -->
+<div id="pdf-viewer-screen">
+  <div class="viewer-header">
+    <button class="btn-back" onclick="closePdfViewer()">← Zurück</button>
+    <div class="viewer-title" id="viewer-title"></div>
+  </div>
+  <div class="viewer-body" id="viewer-body"></div>
+</div>
+
+<!-- ══ MODAL: BEARBEITEN ════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-edit">
+  <div class="modal-box">
+    <div class="modal-title">Protokoll bearbeiten</div>
+    <div class="form-group">
+      <label class="form-label">Titel</label>
+      <input class="form-input" type="text" id="e-titel">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Datum</label>
+      <input class="form-input" type="date" id="e-datum">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Protokolltyp</label>
+      <select class="form-select" id="e-typ">
+        <option value="Ausschusssitzung">Ausschusssitzung</option>
+        <option value="Sponsorenrunde">Sponsorenrunde</option>
+        <option value="Vorstandsprotokoll">Vorstandsprotokoll</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Stichworte</label>
+      <input class="form-input" type="text" id="e-tags">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notiz</label>
+      <textarea class="form-textarea" id="e-notiz"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('modal-edit')">Abbrechen</button>
+      <button class="btn-save" onclick="saveEdit()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: LÖSCHEN ════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-delete">
+  <div class="modal-box">
+    <div class="modal-title">Protokoll löschen?</div>
+    <div style="font-size:14px;color:var(--grau-hell);line-height:1.6" id="delete-text"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('modal-delete')">Abbrechen</button>
+      <button class="btn-danger" onclick="confirmDelete()">Löschen</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: ABLAUF-WARNUNG ════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-ablauf">
+  <div class="modal-box">
+    <div class="modal-title">⚠️ Löschung fällig</div>
+    <div style="font-size:13px;color:var(--grau-hell);line-height:1.6">
+      Folgende Protokolle sind älter als 5 Jahre und werden zur Löschung vorgeschlagen:
+    </div>
+    <ul class="warn-list" id="ablauf-list"></ul>
+    <div style="font-size:13px;color:var(--grau-hell);margin-top:8px">
+      Sollen diese Protokolle jetzt unwiderruflich gelöscht werden?
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('modal-ablauf')">Nicht jetzt</button>
+      <button class="btn-danger" onclick="confirmAblauf()">Alle löschen</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOAST ═════════════════════════════════════════════════════ -->
+<div id="toast"></div>
+
+<script>
+// ── STORAGE KEYS ────────────────────────────────────────────────
+const KEY_DATA   = 'tsv_protokolle';
+const KEY_PW     = 'tsv_pw';
+const DEFAULT_PW = 'TSV2024';
+
+// ── STATE ────────────────────────────────────────────────────────
+let protokolle = [];
+let editId = null;
+let deleteId = null;
+let ablaufIds = [];
+let selectedPdfBase64 = null;
+
+// ── INIT ─────────────────────────────────────────────────────────
+function init() {
+  protokolle = JSON.parse(localStorage.getItem(KEY_DATA) || '[]');
+}
+
+// ── LOGIN ────────────────────────────────────────────────────────
+function getPw() { return localStorage.getItem(KEY_PW) || DEFAULT_PW; }
+
+document.getElementById('pw-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+function doLogin() {
+  const val = document.getElementById('pw-input').value;
+  if (val === getPw()) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    document.getElementById('app').style.flexDirection = 'column';
+    renderStats();
+    renderListe();
+    checkAblauf();
+    updateSpeicherInfo();
+  } else {
+    document.getElementById('login-error').style.display = 'block';
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-input').focus();
+  }
+}
+
+function doLogout() {
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('pw-input').value = '';
+  document.getElementById('login-error').style.display = 'none';
+}
+
+function changePassword() {
+  const n1 = document.getElementById('pw-neu').value.trim();
+  const n2 = document.getElementById('pw-neu2').value.trim();
+  if (!n1) { showToast('Bitte ein Passwort eingeben', 'error'); return; }
+  if (n1 !== n2) { showToast('Passwörter stimmen nicht überein', 'error'); return; }
+  if (n1.length < 4) { showToast('Mindestens 4 Zeichen', 'error'); return; }
+  localStorage.setItem(KEY_PW, n1);
+  document.getElementById('pw-neu').value = '';
+  document.getElementById('pw-neu2').value = '';
+  showToast('Passwort geändert ✓', 'success');
+}
+
+// ── TABS ─────────────────────────────────────────────────────────
+function showTab(name) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('content-' + name).classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'info') updateSpeicherInfo();
+}
+
+// ── ABLAUF CHECK ─────────────────────────────────────────────────
+function checkAblauf() {
+  const now = new Date();
+  const fuenf = new Date(now);
+  fuenf.setFullYear(fuenf.getFullYear() - 5);
+
+  ablaufIds = protokolle
+    .filter(p => new Date(p.datum) < fuenf)
+    .map(p => p.id);
+
+  if (ablaufIds.length > 0) {
+    const list = document.getElementById('ablauf-list');
+    list.innerHTML = ablaufIds.map(id => {
+      const p = protokolle.find(x => x.id === id);
+      return `<li>📄 ${p.titel} <span style="color:var(--grau-hell)">(${formatDatum(p.datum)})</span></li>`;
+    }).join('');
+    document.getElementById('modal-ablauf').classList.add('active');
+  }
+}
+
+function confirmAblauf() {
+  protokolle = protokolle.filter(p => !ablaufIds.includes(p.id));
+  saveData();
+  closeModal('modal-ablauf');
+  renderListe();
+  renderStats();
+  showToast(`${ablaufIds.length} Protokoll(e) gelöscht`, 'success');
+  ablaufIds = [];
+}
+
+// ── RENDER LISTE ─────────────────────────────────────────────────
+function renderListe() {
+  const suche   = document.getElementById('search-input').value.toLowerCase().trim();
+  const typ     = document.getElementById('filter-typ').value;
+  const von     = document.getElementById('filter-von').value;
+  const bis     = document.getElementById('filter-bis').value;
+
+  let gefiltert = [...protokolle];
+
+  if (suche) {
+    gefiltert = gefiltert.filter(p =>
+      p.titel.toLowerCase().includes(suche) ||
+      (p.tags || []).some(t => t.toLowerCase().includes(suche))
+    );
+  }
+  if (typ) gefiltert = gefiltert.filter(p => p.typ === typ);
+  if (von) gefiltert = gefiltert.filter(p => p.datum >= von);
+  if (bis) gefiltert = gefiltert.filter(p => p.datum <= bis);
+
+  // Sortierung: neueste zuerst
+  gefiltert.sort((a, b) => b.datum.localeCompare(a.datum));
+
+  const container = document.getElementById('protokoll-list');
+
+  if (gefiltert.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">🗂️</div>
+        <div class="empty-text">${protokolle.length === 0 ? 'Noch keine Protokolle vorhanden.<br>Lade dein erstes Protokoll hoch!' : 'Keine Ergebnisse für diese Suche.'}</div>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = gefiltert.map(p => {
+    const typClass = p.typ === 'Ausschusssitzung' ? 'ausschuss' : p.typ === 'Sponsorenrunde' ? 'sponsor' : 'vorstand';
+    const badgeClass = `badge badge-${typClass}`;
+    const tags = (p.tags || []).map(t => `<span class="tag">${t}</span>`).join('');
+    const notiz = p.notiz ? `<div class="card-notiz">📝 ${escHtml(p.notiz)}</div>` : '';
+    return `
+      <div class="protokoll-card typ-${typClass}" onclick="openPdf('${p.id}')">
+        <div class="card-top">
+          <div class="card-title">${escHtml(p.titel)}</div>
+          <div class="card-actions" onclick="event.stopPropagation()">
+            <button class="btn-icon" onclick="openEdit('${p.id}')" title="Bearbeiten">✏️</button>
+            <button class="btn-icon delete" onclick="openDelete('${p.id}')" title="Löschen">🗑️</button>
+          </div>
+        </div>
+        <div class="card-meta">
+          <span class="${badgeClass}">${p.typ}</span>
+          <span class="card-date">📅 ${formatDatum(p.datum)}</span>
+        </div>
+        ${tags ? `<div class="card-tags">${tags}</div>` : ''}
+        ${notiz}
+      </div>`;
+  }).join('');
+}
+
+// ── STATS ────────────────────────────────────────────────────────
+function renderStats() {
+  const total = protokolle.length;
+  const aus = protokolle.filter(p => p.typ === 'Ausschusssitzung').length;
+  const spo = protokolle.filter(p => p.typ === 'Sponsorenrunde').length;
+  const vor = protokolle.filter(p => p.typ === 'Vorstandsprotokoll').length;
+
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-number">${total}</div>
+      <div class="stat-label">Gesamt</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" style="color:#F5C400">${aus}</div>
+      <div class="stat-label">Ausschuss</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" style="color:#4DB6AC">${spo}</div>
+      <div class="stat-label">Sponsoren</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" style="color:#EF5350">${vor}</div>
+      <div class="stat-label">Vorstand</div>
+    </div>`;
+}
+
+// ── PDF HOCHLADEN ─────────────────────────────────────────────────
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) processFile(file);
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type === 'application/pdf') processFile(file);
+  else showToast('Bitte nur PDF-Dateien', 'error');
+}
+
+function processFile(file) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    selectedPdfBase64 = e.target.result;
+    document.getElementById('upload-zone').classList.add('has-file');
+    document.getElementById('upload-zone-text').textContent = '✓ ' + file.name;
+    // Titel vorbelegen wenn leer
+    if (!document.getElementById('f-titel').value) {
+      document.getElementById('f-titel').value = file.name.replace('.pdf', '');
+    }
+    checkUploadReady();
+  };
+  reader.readAsDataURL(file);
+}
+
+function checkUploadReady() {
+  const ok = selectedPdfBase64 &&
+    document.getElementById('f-titel').value.trim() &&
+    document.getElementById('f-datum').value &&
+    document.getElementById('f-typ').value;
+  document.getElementById('btn-upload').disabled = !ok;
+}
+
+['f-titel', 'f-datum', 'f-typ'].forEach(id => {
+  document.getElementById(id).addEventListener('input', checkUploadReady);
+  document.getElementById(id).addEventListener('change', checkUploadReady);
+});
+
+function saveProtokoll() {
+  const titel = document.getElementById('f-titel').value.trim();
+  const datum = document.getElementById('f-datum').value;
+  const typ   = document.getElementById('f-typ').value;
+  const tags  = document.getElementById('f-tags').value.split(',').map(t => t.trim()).filter(Boolean);
+  const notiz = document.getElementById('f-notiz').value.trim();
+
+  if (!titel || !datum || !typ || !selectedPdfBase64) {
+    showToast('Bitte alle Pflichtfelder ausfüllen', 'error'); return;
+  }
+
+  const p = {
+    id: 'p_' + Date.now(),
+    titel, datum, typ, tags, notiz,
+    pdf: selectedPdfBase64,
+    erstellt: new Date().toISOString()
+  };
+
+  protokolle.push(p);
+  saveData();
+  resetUploadForm();
+  renderListe();
+  renderStats();
+  showTab('liste');
+  showToast('Protokoll gespeichert ✓', 'success');
+}
+
+function resetUploadForm() {
+  selectedPdfBase64 = null;
+  document.getElementById('f-titel').value = '';
+  document.getElementById('f-datum').value = '';
+  document.getElementById('f-typ').value = '';
+  document.getElementById('f-tags').value = '';
+  document.getElementById('f-notiz').value = '';
+  document.getElementById('pdf-input').value = '';
+  document.getElementById('upload-zone').classList.remove('has-file');
+  document.getElementById('upload-zone-text').textContent = 'Tippen zum Auswählen';
+  document.getElementById('btn-upload').disabled = true;
+}
+
+// ── PDF ANZEIGEN ─────────────────────────────────────────────────
+function openPdf(id) {
+  const p = protokolle.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('viewer-title').textContent = p.titel;
+  const body = document.getElementById('viewer-body');
+  body.innerHTML = `<iframe src="${p.pdf}" style="width:100%;height:100%;border:none"></iframe>`;
+  const viewer = document.getElementById('pdf-viewer-screen');
+  viewer.style.display = 'flex';
+  viewer.style.flexDirection = 'column';
+}
+
+function closePdfViewer() {
+  document.getElementById('pdf-viewer-screen').style.display = 'none';
+  document.getElementById('viewer-body').innerHTML = '';
+}
+
+// ── BEARBEITEN ────────────────────────────────────────────────────
+function openEdit(id) {
+  const p = protokolle.find(x => x.id === id);
+  if (!p) return;
+  editId = id;
+  document.getElementById('e-titel').value = p.titel;
+  document.getElementById('e-datum').value = p.datum;
+  document.getElementById('e-typ').value = p.typ;
+  document.getElementById('e-tags').value = (p.tags || []).join(', ');
+  document.getElementById('e-notiz').value = p.notiz || '';
+  document.getElementById('modal-edit').classList.add('active');
+}
+
+function saveEdit() {
+  const p = protokolle.find(x => x.id === editId);
+  if (!p) return;
+  p.titel = document.getElementById('e-titel').value.trim();
+  p.datum = document.getElementById('e-datum').value;
+  p.typ   = document.getElementById('e-typ').value;
+  p.tags  = document.getElementById('e-tags').value.split(',').map(t => t.trim()).filter(Boolean);
+  p.notiz = document.getElementById('e-notiz').value.trim();
+  saveData();
+  closeModal('modal-edit');
+  renderListe();
+  renderStats();
+  showToast('Gespeichert ✓', 'success');
+}
+
+// ── LÖSCHEN ───────────────────────────────────────────────────────
+function openDelete(id) {
+  const p = protokolle.find(x => x.id === id);
+  if (!p) return;
+  deleteId = id;
+  document.getElementById('delete-text').innerHTML =
+    `Möchtest du <strong style="color:var(--weiss)">${escHtml(p.titel)}</strong> wirklich löschen?<br><br><span style="font-size:12px">Diese Aktion kann nicht rückgängig gemacht werden.</span>`;
+  document.getElementById('modal-delete').classList.add('active');
+}
+
+function confirmDelete() {
+  protokolle = protokolle.filter(p => p.id !== deleteId);
+  saveData();
+  closeModal('modal-delete');
+  renderListe();
+  renderStats();
+  showToast('Protokoll gelöscht', 'success');
+}
+
+// ── FILTER RESET ──────────────────────────────────────────────────
+function resetFilter() {
+  document.getElementById('search-input').value = '';
+  document.getElementById('filter-typ').value = '';
+  document.getElementById('filter-von').value = '';
+  document.getElementById('filter-bis').value = '';
+  renderListe();
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────
+function saveData() {
+  localStorage.setItem(KEY_DATA, JSON.stringify(protokolle));
+}
+
+function formatDatum(d) {
+  if (!d) return '';
+  const [y, m, t] = d.split('-');
+  return `${t}.${m}.${y}`;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('active');
+}
+
+// Klick außerhalb Modal schließt es
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('active');
+  });
+});
+
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = type ? `show ${type}` : 'show';
+  setTimeout(() => { t.className = type; }, 2800);
+}
+
+function updateSpeicherInfo() {
+  try {
+    let bytes = 0;
+    for (let k in localStorage) {
+      if (localStorage.hasOwnProperty(k)) bytes += (localStorage[k].length + k.length) * 2;
+    }
+    const mb = (bytes / 1024 / 1024).toFixed(2);
+    const max = 5;
+    const pct = Math.min(100, ((bytes / 1024 / 1024) / max * 100)).toFixed(0);
+    document.getElementById('speicher-info').innerHTML =
+      `Genutzt: <strong style="color:var(--weiss)">${mb} MB</strong> von ca. ${max} MB<br>
+       <div style="background:var(--dunkel3);border-radius:4px;height:6px;margin-top:8px">
+         <div style="background:var(--gelb);width:${pct}%;height:6px;border-radius:4px;transition:width 0.5s"></div>
+       </div>
+       <span style="font-size:11px">${pct}% belegt</span>`;
+  } catch(e) {
+    document.getElementById('speicher-info').textContent = 'Nicht ermittelbar';
+  }
+}
+
+// ── START ─────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
